@@ -1,47 +1,33 @@
 const express = require("express");
-const app = express();
 const cors = require("cors");
-require('dotenv').config()
+require("dotenv").config();
 
+const connectDB = require("./config/db");
+const productRoutes = require("./routes/product.routes");
+
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 
+(async () => {
+  const db = await connectDB();
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ejucsc6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+  // Initialize controllers with DB
+  const productController = require("./controllers/product.controller");
+  productController.init(db);
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
+  // Routes
+  app.use("/products", productRoutes);
 
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+  // Test route
+  app.get("/", (req, res) => {
+    res.send("Techzy Server is running...");
+  });
 
-
-// Test route
-app.get("/", (req, res) => {
-  res.send("Techzy Server is running...");
-});
-
-app.listen(PORT, () => {
-  console.log(`Techzy Server running on port ${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`Techzy Server running on port ${PORT}`);
+  });
+})();
