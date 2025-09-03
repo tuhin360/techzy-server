@@ -31,5 +31,7 @@ const getProductsByTag = async (req, res) => {
 
 
 
-module.exports = { init, getProducts, getProductsByTag, createProduct };
+ 
+
+module.exports = { init, getProducts, getProductsByTag };
  

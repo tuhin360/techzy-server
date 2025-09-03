@@ -2,8 +2,9 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const connectDB = require("./config/db");
-const productRoutes = require("./routes/product.routes");
+const connectDB = require("./src/config/db");
+const productRoutes = require("./src/routes/product.routes");
+const cartRoutes = require("./src/routes/cart.routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,11 +17,15 @@ app.use(cors());
   const db = await connectDB();
 
   // Initialize controllers with DB
-  const productController = require("./controllers/product.controller");
+  const productController = require("./src/controllers/product.controller");
+  const cartController = require("./src/controllers/cart.controller");
+
   productController.init(db);
+  cartController.init(db);
 
   // Routes
   app.use("/products", productRoutes);
+  app.use("/carts", cartRoutes);
 
   // Test route
   app.get("/", (req, res) => {
