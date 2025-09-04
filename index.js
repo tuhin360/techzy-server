@@ -5,6 +5,7 @@ require("dotenv").config();
 const connectDB = require("./src/config/db");
 const productRoutes = require("./src/routes/product.routes");
 const cartRoutes = require("./src/routes/cart.routes");
+const userRoutes = require("./src/routes/user.routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,13 +20,16 @@ app.use(cors());
   // Initialize controllers with DB
   const productController = require("./src/controllers/product.controller");
   const cartController = require("./src/controllers/cart.controller");
+  const userController = require("./src/controllers/user.controller");
 
   productController.init(db);
   cartController.init(db);
+  userController.init(db);
 
   // Routes
   app.use("/products", productRoutes);
   app.use("/carts", cartRoutes);
+  app.use("/users", userRoutes);
 
   // Test route
   app.get("/", (req, res) => {

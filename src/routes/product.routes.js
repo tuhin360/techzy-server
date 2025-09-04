@@ -2,7 +2,6 @@ const express = require("express");
 const {
   getProducts,
   getProductsByTag,
-  cartProduct
 } = require("../controllers/product.controller");
 
 const router = express.Router();
