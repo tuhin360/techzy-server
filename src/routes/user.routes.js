@@ -1,6 +1,11 @@
 const express = require("express");
-
-const {  createUser, getAllUsers, deleteUser, updateUserRole } = require("../controllers/user.controller");
+const {
+  createUser,
+  getAllUsers,
+  deleteUser,
+  updateUserRole,
+} = require("../controllers/user.controller");
+const verifyJWT = require("../middlewares/verifyJWT");
 
 const router = express.Router();
 
@@ -8,7 +13,7 @@ const router = express.Router();
 router.post("/", createUser);
 
 // get all users
-router.get("/", getAllUsers);
+router.get("/", verifyJWT, getAllUsers);
 
 router.delete("/:id", deleteUser);
 

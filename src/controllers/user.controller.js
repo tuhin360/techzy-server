@@ -27,6 +27,7 @@ const createUser = async (req, res) => {
 
 // get all users
 const getAllUsers = async (req, res) => {
+  console.log(req.headers);
   try {
     const users = await usersCollection.find().toArray();
     res.send(users);
@@ -67,6 +68,5 @@ const updateUserRole = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
-
 
 module.exports = { init, createUser, getAllUsers, deleteUser, updateUserRole };
