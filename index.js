@@ -21,6 +21,7 @@ app.use(cors());
   const productController = require("./src/controllers/product.controller");
   const cartController = require("./src/controllers/cart.controller");
   const userController = require("./src/controllers/user.controller");
+  const jwtRoutes = require("./src/routes/jwt.routes");
 
   productController.init(db);
   cartController.init(db);
@@ -30,6 +31,7 @@ app.use(cors());
   app.use("/products", productRoutes);
   app.use("/carts", cartRoutes);
   app.use("/users", userRoutes);
+  app.use("/jwt", jwtRoutes);
 
   // Test route
   app.get("/", (req, res) => {

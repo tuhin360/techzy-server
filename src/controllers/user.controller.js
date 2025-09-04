@@ -59,7 +59,10 @@ const updateUserRole = async (req, res) => {
       },
     };
     const result = await usersCollection.updateOne(query, updateDoc);
-    res.send({ success: result.modifiedCount > 0, result });
+    res.send({
+      success: result.modifiedCount > 0,
+      modifiedCount: result.modifiedCount,
+    });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
