@@ -4,9 +4,10 @@ const {
   getAllUsers,
   deleteUser,
   updateUserRole,
+  verifyAdmin,
 } = require("../controllers/user.controller");
 const verifyJWT = require("../middlewares/verifyJWT");
-
+ 
 const router = express.Router();
 
 // create user
@@ -17,6 +18,10 @@ router.get("/", verifyJWT, getAllUsers);
 
 router.delete("/:id", deleteUser);
 
-router.patch("/admin/:id", updateUserRole);
+// router.patch("/admin/:id", updateUserRole);
+
+router.patch("/role/:id", updateUserRole);
+
+router.get("/admin/:email", verifyJWT, verifyAdmin);
 
 module.exports = router;

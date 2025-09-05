@@ -6,6 +6,7 @@ const connectDB = require("./src/config/db");
 const productRoutes = require("./src/routes/product.routes");
 const cartRoutes = require("./src/routes/cart.routes");
 const userRoutes = require("./src/routes/user.routes");
+const { initAdminMiddleware } = require("./src/middlewares/verifyAdmin");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +27,7 @@ app.use(cors());
   productController.init(db);
   cartController.init(db);
   userController.init(db);
+
 
   // Routes
   app.use("/products", productRoutes);
