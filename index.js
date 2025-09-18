@@ -8,6 +8,7 @@ const productRoutes = require("./src/routes/product.routes");
 const cartRoutes = require("./src/routes/cart.routes");
 const userRoutes = require("./src/routes/user.routes");
 const paymentRoutes = require("./src/routes/payment.routes");
+const reviewRoutes = require("./src/routes/review.routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,11 +26,13 @@ app.use(cors());
   const userController = require("./src/controllers/user.controller");
   const jwtRoutes = require("./src/routes/jwt.routes");
   const paymentController = require("./src/controllers/payment.controller");
+  const reviewController = require("./src/controllers/review.controller")
 
   productController.init(db);
   cartController.init(db);
   userController.init(db);
   paymentController.init(db);
+  reviewController.init(db);
 
   // Routes
   app.use("/products", productRoutes);
@@ -37,6 +40,7 @@ app.use(cors());
   app.use("/users", userRoutes);
   app.use("/jwt", jwtRoutes);
   app.use("/payments", paymentRoutes);
+  app.use("/reviews", reviewRoutes)
 
   // Test route
   app.get("/", (req, res) => {

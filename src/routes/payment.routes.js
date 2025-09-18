@@ -1,23 +1,3 @@
-// const express = require("express");
-// const router = express.Router();
-// const { payment, savePayment,  getAllPaymentsByEmail } = require("../controllers/payment.controller");
-// const verifyJWT = require("../middlewares/verifyJWT");
- 
-
-// // create payment intent
-// router.post("/create-payment-intent", payment);
-
-// // save payment info to DB
-// router.post("/", savePayment);
-
-// // get all payments
-// router.get("/:email",verifyJWT, getAllPaymentsByEmail);
-
-// module.exports = router;
-
-
-
-
 // routes/payment.routes.js
 const express = require("express");
 const router = express.Router();
