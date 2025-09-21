@@ -6,6 +6,7 @@ const {
   addProduct,
   getProductById,
   updateProductById,
+  getProductsBulk,
 } = require("../controllers/product.controller");
 const verifyJWT = require("../middlewares/verifyJWT");
 const { verifyAdmin } = require("../controllers/user.controller");
@@ -30,5 +31,7 @@ router.post("/", addProduct);
 
 // // Update product
 router.patch("/:id", updateProductById);
+
+router.post("/bulk", getProductsBulk);
 
 module.exports = router;

@@ -91,6 +91,19 @@ const updateProductById = async (req, res) => {
   res.send(result);
 };
 
+
+const getProductsBulk = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !ids.length) return res.status(400).send({ message: "IDs required" });
+
+    const objectIds = ids.map(id => new ObjectId(id));
+    const products = await productCollection.find({ _id: { $in: objectIds } }).toArray();
+    res.send(products);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
 module.exports = {
   init,
   getProducts,
@@ -99,6 +112,7 @@ module.exports = {
   addProduct,
   getProductById,
   updateProductById,
+  getProductsBulk
 };
 
 
