@@ -75,11 +75,33 @@ const addProduct = async (req, res) => {
   }
 };
 
+// const getProductById = async (req, res) => {
+//   const id = req.params.id;
+//   const query = { _id: new ObjectId(id) };
+//   const result = await productCollection.findOne(query);
+//   res.send(result);
+// };
+
+// Get product details by ID
 const getProductById = async (req, res) => {
-  const id = req.params.id;
-  const query = { _id: new ObjectId(id) };
-  const result = await productCollection.findOne(query);
-  res.send(result);
+  try {
+    const id = req.params.id;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid product ID" });
+    }
+
+    const query = { _id: new ObjectId(id) };
+    const product = await productCollection.findOne(query);
+
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    res.status(200).send(product);
+  } catch (err) {
+    res.status(500).send({ message: "Error fetching product details", error: err.message });
+  }
 };
 
 const updateProductById = async (req, res) => {
@@ -104,6 +126,21 @@ const getProductsBulk = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
+
+// ✅ Get products by category
+// Example: GET /products/category/Audio
+const getProductsByCategory = async (req, res) => {
+  try {
+    const { category } = req.params;
+    if (!category) return res.status(400).send({ message: "Category is required" });
+
+    const products = await productCollection.find({ category }).toArray();
+    res.send(products);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
   init,
   getProducts,
@@ -112,7 +149,8 @@ module.exports = {
   addProduct,
   getProductById,
   updateProductById,
-  getProductsBulk
+  getProductsBulk,
+  getProductsByCategory,
 };
 
 
