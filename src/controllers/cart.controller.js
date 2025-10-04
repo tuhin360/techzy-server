@@ -14,6 +14,19 @@ const addToCart = async (req, res) => {
       return res.status(400).send({ message: "User email is required" });
     }
 
+    const query = {
+      email: cartItem.email,
+      menuId: cartItem.menuId,
+    };
+
+    // Check if already exists
+    const existingItem = await cartCollection.findOne(query);
+    if (existingItem) {
+      return res
+        .status(200)
+        .send({ alreadyInCart: true, message: "Item already in cart" });
+    }
+
     // Add timestamp and default status
     const cartItemWithDefaults = {
       ...cartItem,
@@ -23,7 +36,7 @@ const addToCart = async (req, res) => {
     };
 
     const result = await cartCollection.insertOne(cartItemWithDefaults);
-    res.status(201).send(result);
+    res.status(201).send({ insertedId: result.insertedId });
   } catch (err) {
     res.status(400).send({ message: err.message });
   }
@@ -39,11 +52,60 @@ const getUserCart = async (req, res) => {
 
     const items = await cartCollection.find({ email }).toArray();
     res.send(items);
-
-    // const items = await cartCollection.find().toArray();
-    // res.send(items);
   } catch (err) {
     res.status(500).send({ message: err.message });
+  }
+};
+
+// PATCH: Update cart item quantity
+const updateCartQuantity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+
+    // Validate quantity
+    if (!quantity || quantity < 1) {
+      return res.status(400).send({ 
+        success: false, 
+        message: "Quantity must be at least 1" 
+      });
+    }
+
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ 
+        success: false, 
+        message: "Invalid cart item ID" 
+      });
+    }
+
+    const result = await cartCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          quantity: quantity,
+          updatedAt: new Date() 
+        } 
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).send({ 
+        success: false, 
+        message: "Cart item not found" 
+      });
+    }
+
+    res.send({ 
+      success: true,
+      message: "Cart quantity updated successfully", 
+      modifiedCount: result.modifiedCount 
+    });
+  } catch (err) {
+    res.status(500).send({ 
+      success: false, 
+      message: err.message 
+    });
   }
 };
 
@@ -51,6 +113,15 @@ const getUserCart = async (req, res) => {
 const deleteCart = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ 
+        success: false, 
+        message: "Invalid cart item ID" 
+      });
+    }
+
     const query = { _id: new ObjectId(id) };
     const result = await cartCollection.deleteOne(query);
 
@@ -66,65 +137,10 @@ const deleteCart = async (req, res) => {
   }
 };
 
-
-// GET: Get all users carts (for admin/orders management)
-// const getUsersAllCarts = async (req, res) => {
-//   try {
-//     const carts = await cartCollection.find().toArray();
-    
-//     // Format the data for better frontend handling
-//     const formattedCarts = carts.map(cart => ({
-//       ...cart,
-//       status: cart.status || 'pending',
-//       orderDate: cart.createdAt || cart.orderDate || new Date(),
-//       phone: cart.phone || 'N/A'
-//     }));
-    
-//     res.send(formattedCarts);
-//   } catch (err) {
-//     res.status(500).send({ message: err.message });
-//   }
-// };
-
-// // PATCH: Update cart item status
-// const updateCartStatus = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { status } = req.body;
-    
-//     // Validate status
-//     if (!status || !['pending', 'done'].includes(status)) {
-//       return res.status(400).send({ message: "Invalid status. Must be 'pending' or 'done'" });
-//     }
-
-//     const result = await cartCollection.updateOne(
-//       { _id: new ObjectId(id) },
-//       { 
-//         $set: { 
-//           status: status, 
-//           updatedAt: new Date() 
-//         } 
-//       }
-//     );
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).send({ message: "Cart item not found" });
-//     }
-
-//     res.send({ 
-//       message: "Cart status updated successfully", 
-//       modifiedCount: result.modifiedCount 
-//     });
-//   } catch (err) {
-//     res.status(500).send({ message: err.message });
-//   }
-// };
-
 module.exports = { 
   init, 
   addToCart, 
   getUserCart, 
-  deleteCart, 
-  // getUsersAllCarts, 
-  // updateCartStatus 
+  updateCartQuantity,
+  deleteCart
 };
