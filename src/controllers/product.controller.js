@@ -75,12 +75,6 @@ const addProduct = async (req, res) => {
   }
 };
 
-// const getProductById = async (req, res) => {
-//   const id = req.params.id;
-//   const query = { _id: new ObjectId(id) };
-//   const result = await productCollection.findOne(query);
-//   res.send(result);
-// };
 
 // Get product details by ID
 const getProductById = async (req, res) => {
@@ -141,6 +135,37 @@ const getProductsByCategory = async (req, res) => {
   }
 };
 
+// Search products by name, category, or tags
+const searchProducts = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    // Case-insensitive regex search
+    const regex = new RegExp(query, "i");
+
+    const products = await productCollection
+      .find({
+        $or: [
+          { title: { $regex: regex } },
+          { category: { $regex: regex } },
+          { tags: { $regex: regex } },
+        ],
+      })
+      .limit(20)
+      .toArray();
+
+    res.status(200).json(products); // Make sure it's .json() not .send()
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ message: "Error searching products", error: err.message });
+  }
+};
+
+
 module.exports = {
   init,
   getProducts,
@@ -151,6 +176,7 @@ module.exports = {
   updateProductById,
   getProductsBulk,
   getProductsByCategory,
+  searchProducts
 };
 
 

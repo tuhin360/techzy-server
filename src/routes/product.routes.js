@@ -8,36 +8,55 @@ const {
   updateProductById,
   getProductsBulk,
   getProductsByCategory,
+  searchProducts,
 } = require("../controllers/product.controller");
 const verifyJWT = require("../middlewares/verifyJWT");
 const { verifyAdmin } = require("../controllers/user.controller");
 
 const router = express.Router();
 
-// Public routes
-// Get all products
-router.get("/", getProducts);
+// ============================================
+// ⚠️ CRITICAL: SPECIFIC ROUTES MUST COME FIRST
+// ============================================
 
-// Get product by id
-router.get("/:id", getProductById);
+// 1. Search products - MUST be before /:id
+// GET /products/search?query=phone
+router.get("/search", searchProducts);
 
-// Get products by tag (ex: /products/filter?tag=new)
+// 2. Filter by tag - MUST be before /:id
+// GET /products/filter?tag=new
 router.get("/filter", getProductsByTag);
 
-// Admin Routes (optional - protect with JWT + Admin middleware later)
-// Delete product
-router.delete("/:id", deleteProduct);
+// 3. Get products by category - MUST be before /:id
+// GET /products/category/Audio
+router.get("/category/:category", getProductsByCategory);
 
-// Post product
-router.post("/", addProduct);
+// 4. Get all products
+// GET /products
+router.get("/", getProducts);
 
-// Update product
-router.patch("/:id", updateProductById);
-
-// Get multiple products by IDs
+// 5. Bulk operations (POST - won't conflict with GET)
+// POST /products/bulk
 router.post("/bulk", getProductsBulk);
 
-// Get products by category
-router.get("/category/:category", getProductsByCategory);
+// 6. Add new product (POST - won't conflict with GET)
+// POST /products
+router.post("/", addProduct);
+
+// ============================================
+// ⚠️ DYNAMIC :id ROUTES MUST COME LAST
+// ============================================
+
+// 7. Get product by id - MUST be after all specific routes
+// GET /products/123abc
+router.get("/:id", getProductById);
+
+// 8. Update product by id
+// PATCH /products/123abc
+router.patch("/:id", updateProductById);
+
+// 9. Delete product by id
+// DELETE /products/123abc
+router.delete("/:id", deleteProduct);
 
 module.exports = router;
