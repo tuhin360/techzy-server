@@ -246,7 +246,7 @@ const deletePayment = async (req, res) => {
 // Create SSLCommerz payment session
 const initiateSSLPayment = async (req, res) => {
   try {
-    const { cartItems, totalPrice, userEmail, userName, userPhone, userAddress, menuItems } = req.body;
+    const { cartItems, totalPrice, userEmail, userName, userPhone, userAddress, menuItems, couponCode } = req.body;
     if (!userEmail) return res.status(400).json({ error: "Email is required" });
     if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
       return res.status(400).json({ error: "Cart items are required" });
@@ -305,6 +305,7 @@ const initiateSSLPayment = async (req, res) => {
           menuItems,
           status: "pending",
           paymentSystem: "SSLCommerz",
+          couponCode: couponCode || null,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
