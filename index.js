@@ -13,6 +13,7 @@ const wishListRoutes = require("./src/routes/wishlist.routes");
 const jwtRoutes = require("./src/routes/jwt.routes");
 const contactRoutes = require("./src/routes/contact.routes");
 const couponRoutes = require("./src/routes/coupon.routes");
+const newsletterRoutes = require("./src/routes/newsletter.routes");
 
 const app = express();
 app.use(express.json());
@@ -44,6 +45,7 @@ app.use("/reviews", reviewRoutes);
 app.use("/wishlist", wishListRoutes);
 app.use("/contacts", contactRoutes);
 app.use("/coupons", couponRoutes);
+app.use("/newsletter", newsletterRoutes);
 
 // ✅ Initialize controllers with DB
 (async () => {
@@ -58,6 +60,7 @@ app.use("/coupons", couponRoutes);
     require("./src/middlewares/verifyAdmin").init(db);
     require("./src/controllers/contact.controller").init(db);
     await require("./src/controllers/coupon.controller").init(db);
+    require("./src/controllers/newsletter.controller").init(db);
     console.log("✅ Controllers initialized with DB");
   } catch (error) {
     console.error("❌ DB connection failed:", error);
