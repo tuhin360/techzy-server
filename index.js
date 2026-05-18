@@ -35,6 +35,35 @@ app.get("/", (req, res) => {
   res.send("✅ Techzy Server is running!");
 });
 
+// ✅ Initialize controllers with DB lazily for Serverless (Vercel)
+let initPromise = null;
+app.use(async (req, res, next) => {
+  if (!initPromise) {
+    initPromise = (async () => {
+      const db = await connectDB();
+      require("./src/controllers/product.controller").init(db);
+      require("./src/controllers/cart.controller").init(db);
+      require("./src/controllers/user.controller").init(db);
+      require("./src/controllers/payment.controller").init(db);
+      require("./src/controllers/review.controller").init(db);
+      require("./src/controllers/wishlist.controller").init(db);
+      require("./src/middlewares/verifyAdmin").init(db);
+      require("./src/controllers/contact.controller").init(db);
+      await require("./src/controllers/coupon.controller").init(db);
+      require("./src/controllers/newsletter.controller").init(db);
+      console.log("✅ Controllers initialized with DB");
+    })();
+  }
+  
+  try {
+    await initPromise;
+    next();
+  } catch (error) {
+    console.error("❌ DB connection failed:", error);
+    res.status(500).json({ error: "Database initialization failed." });
+  }
+});
+
 // ✅ Routes registration
 app.use("/products", productRoutes);
 app.use("/carts", cartRoutes);
@@ -46,26 +75,6 @@ app.use("/wishlist", wishListRoutes);
 app.use("/contacts", contactRoutes);
 app.use("/coupons", couponRoutes);
 app.use("/newsletter", newsletterRoutes);
-
-// ✅ Initialize controllers with DB
-(async () => {
-  try {
-    const db = await connectDB();
-    require("./src/controllers/product.controller").init(db);
-    require("./src/controllers/cart.controller").init(db);
-    require("./src/controllers/user.controller").init(db);
-    require("./src/controllers/payment.controller").init(db);
-    require("./src/controllers/review.controller").init(db);
-    require("./src/controllers/wishlist.controller").init(db);
-    require("./src/middlewares/verifyAdmin").init(db);
-    require("./src/controllers/contact.controller").init(db);
-    await require("./src/controllers/coupon.controller").init(db);
-    require("./src/controllers/newsletter.controller").init(db);
-    console.log("✅ Controllers initialized with DB");
-  } catch (error) {
-    console.error("❌ DB connection failed:", error);
-  }
-})();
 
 // ✅ 404 handler
 app.use((req, res) => {
