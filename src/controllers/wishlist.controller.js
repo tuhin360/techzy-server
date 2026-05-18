@@ -1,10 +1,12 @@
 const { ObjectId } = require("mongodb");
 
 let wishListCollection;
+let usersCollection;
 
 // ✅ Initialize collection (same as your cart pattern)
 const init = (db) => {
   wishListCollection = db.collection("wishlist");
+  usersCollection = db.collection("users");
 };
 
 // ✅ Get all wishlist items by user email
@@ -26,6 +28,12 @@ const addToWishList = async (req, res) => {
     const { email, productId } = req.body;
     if (!email || !productId) {
       return res.status(400).send({ message: "Email and productId are required" });
+    }
+
+    // Check if user is an admin
+    const user = await usersCollection.findOne({ email });
+    if (user && user.role === "admin") {
+      return res.status(403).send({ message: "Admins are not allowed to add items to wishlist" });
     }
 
     // Prevent duplicates

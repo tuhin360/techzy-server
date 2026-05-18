@@ -1,9 +1,11 @@
 const { ObjectId } = require("mongodb");
 
 let cartCollection;
+let usersCollection;
 
 const init = (db) => {
   cartCollection = db.collection("carts");
+  usersCollection = db.collection("users");
 };
 
 // POST: Add product to cart
@@ -12,6 +14,12 @@ const addToCart = async (req, res) => {
     const cartItem = req.body;
     if (!cartItem.email) {
       return res.status(400).send({ message: "User email is required" });
+    }
+
+    // Check if user is an admin
+    const user = await usersCollection.findOne({ email: cartItem.email });
+    if (user && user.role === "admin") {
+      return res.status(403).send({ message: "Admins are not allowed to add items to cart" });
     }
 
     const query = {
