@@ -11,7 +11,7 @@ const {
   searchProducts,
 } = require("../controllers/product.controller");
 const verifyJWT = require("../middlewares/verifyJWT");
-const { verifyAdmin } = require("../controllers/user.controller");
+const verifyAdmin = require("../middlewares/verifyAdmin").verifyAdmin;
 
 const router = express.Router();
 
@@ -41,7 +41,7 @@ router.post("/bulk", getProductsBulk);
 
 // 6. Add new product (POST - won't conflict with GET)
 // POST /products
-router.post("/", addProduct);
+router.post("/", verifyJWT, verifyAdmin, addProduct);
 
 // ============================================
 // ⚠️ DYNAMIC :id ROUTES MUST COME LAST
@@ -53,10 +53,10 @@ router.get("/:id", getProductById);
 
 // 8. Update product by id
 // PATCH /products/123abc
-router.patch("/:id", updateProductById);
+router.patch("/:id", verifyJWT, verifyAdmin, updateProductById);
 
 // 9. Delete product by id
 // DELETE /products/123abc
-router.delete("/:id", deleteProduct);
+router.delete("/:id", verifyJWT, verifyAdmin, deleteProduct);
 
 module.exports = router;

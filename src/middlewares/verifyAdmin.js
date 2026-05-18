@@ -1,22 +1,26 @@
-// let usersCollection;
+let usersCollection;
 
-// const init = (db) => {
-//   usersCollection = db.collection("users");
-// };
+const init = (db) => {
+  usersCollection = db.collection("users");
+};
 
-// // use verify admin after verify token
-// const verifyAdmin = async (req, res, next) => {
-//   const email = req.decoded.email;
-//   const query = { email: email };
-//   const user = await usersCollection.findOne(query);
-//   const isAmin = user?.role === "admin";
-//   if (!isAmin) {
-//     return res.status(401).send({ message: "Unauthorized Access" });
-//   }
-//   next();
-// };
+// use verify admin after verify token
+const verifyAdmin = async (req, res, next) => {
+  const email = req.decoded?.email;
+  if (!email) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
 
-// module.exports = {
-//   init,
-//   verifyAdmin,
-// };
+  const query = { email: email };
+  const user = await usersCollection.findOne(query);
+  const isAdmin = user?.role === "admin";
+  if (!isAdmin) {
+    return res.status(403).send({ message: "Forbidden access" });
+  }
+  next();
+};
+
+module.exports = {
+  init,
+  verifyAdmin,
+};

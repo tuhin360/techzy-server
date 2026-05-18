@@ -7,6 +7,7 @@ const {
   verifyAdmin,
 } = require("../controllers/user.controller");
 const verifyJWT = require("../middlewares/verifyJWT");
+const verifyAdminMiddleware = require("../middlewares/verifyAdmin").verifyAdmin;
 
 const router = express.Router();
 
@@ -14,11 +15,13 @@ const router = express.Router();
 router.post("/", createUser);
 
 // get all users
-router.get("/", verifyJWT, getAllUsers);
+router.get("/", verifyJWT, verifyAdminMiddleware, getAllUsers);
 
-router.delete("/:id", deleteUser);
+// delete user
+router.delete("/:id", verifyJWT, verifyAdminMiddleware, deleteUser);
 
-router.patch("/role/:id", updateUserRole);
+// update user role
+router.patch("/role/:id", verifyJWT, verifyAdminMiddleware, updateUserRole);
 
 router.get("/admin/:email", verifyJWT, verifyAdmin);
 
