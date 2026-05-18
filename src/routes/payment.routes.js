@@ -7,15 +7,25 @@ const {
   getAllPaymentsByEmail,
   getAllPayments,
   updatePaymentStatus,
-  deletePayment 
+  deletePayment,
+  initiateSSLPayment,
+  handleSSLSuccess,
+  handleSSLFail,
+  handleSSLCancel
 } = require("../controllers/payment.controller");
 const verifyJWT = require("../middlewares/verifyJWT");
 
-// create payment intent
+// create Stripe payment intent
 router.post("/create-payment-intent", payment);
 
-// save payment info to DB
+// save Stripe payment info to DB
 router.post("/", savePayment);
+
+// SSLCommerz payment endpoints
+router.post("/ssl-initiate", initiateSSLPayment);
+router.post("/ssl-success/:tranId", handleSSLSuccess);
+router.post("/ssl-fail/:tranId", handleSSLFail);
+router.post("/ssl-cancel/:tranId", handleSSLCancel);
 
 // get all payments by email
 router.get("/user/:email", verifyJWT, getAllPaymentsByEmail);

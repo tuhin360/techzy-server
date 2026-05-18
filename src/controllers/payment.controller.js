@@ -243,6 +243,145 @@ const deletePayment = async (req, res) => {
   }
 };
 
+// Create SSLCommerz payment session
+const initiateSSLPayment = async (req, res) => {
+  try {
+    const { cartItems, totalPrice, userEmail, userName, userPhone, userAddress, menuItems } = req.body;
+    if (!userEmail) return res.status(400).json({ error: "Email is required" });
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({ error: "Cart items are required" });
+    }
+
+    const tran_id = `TXN-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const data = {
+      total_amount: Number(totalPrice),
+      currency: "BDT",
+      tran_id: tran_id,
+      success_url: `${process.env.VITE_SERVER_URL}/payments/ssl-success/${tran_id}`,
+      fail_url: `${process.env.VITE_SERVER_URL}/payments/ssl-fail/${tran_id}`,
+      cancel_url: `${process.env.VITE_SERVER_URL}/payments/ssl-cancel/${tran_id}`,
+      ipn_url: `${process.env.VITE_SERVER_URL}/payments/ssl-ipn`,
+      shipping_method: "Courier",
+      product_name: "Techzy Products",
+      product_category: "Electronics",
+      product_profile: "general",
+      cus_name: userName || "Customer",
+      cus_email: userEmail,
+      cus_add1: userAddress || "Dhaka",
+      cus_add2: "Dhaka",
+      cus_city: "Dhaka",
+      cus_state: "Dhaka",
+      cus_postcode: "1200",
+      cus_country: "Bangladesh",
+      cus_phone: userPhone || "01700000000",
+      cus_fax: "01700000000",
+      ship_name: userName || "Customer",
+      ship_add1: userAddress || "Dhaka",
+      ship_add2: "Dhaka",
+      ship_city: "Dhaka",
+      ship_state: "Dhaka",
+      ship_postcode: "1200",
+      ship_country: "Bangladesh",
+    };
+
+    const SSLCommerzPayment = require("sslcommerz-lts");
+    const sslcz = new SSLCommerzPayment(
+      process.env.SSL_STORE_ID,
+      process.env.SSL_STORE_PASSWORD,
+      false // is_live = false for sandbox
+    );
+
+    sslcz.init(data).then(async (apiResponse) => {
+      let GatewayPageURL = apiResponse.GatewayPageURL;
+      if (GatewayPageURL) {
+        // Save pending payment info to DB
+        const pendingOrder = {
+          email: userEmail,
+          transactionId: tran_id,
+          amount: Number(totalPrice),
+          date: new Date(),
+          cartItems,
+          menuItems,
+          status: "pending",
+          paymentSystem: "SSLCommerz",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await paymentCollection.insertOne(pendingOrder);
+
+        res.send({ url: GatewayPageURL });
+      } else {
+        console.error("SSLCommerz init failed:", apiResponse);
+        res.status(400).json({ error: "Failed to generate GatewayPageURL" });
+      }
+    });
+  } catch (err) {
+    console.error("SSLCommerz initiate error:", err);
+    res.status(500).json({ error: "SSLCommerz initialization failed" });
+  }
+};
+
+// Handle SSLCommerz Success callback
+const handleSSLSuccess = async (req, res) => {
+  try {
+    const { tranId } = req.params;
+
+    // Update payment status to confirmed
+    await paymentCollection.updateOne(
+      { transactionId: tranId },
+      {
+        $set: {
+          status: "confirmed",
+          paidAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    // Find the payment to get the cart items
+    const paymentOrder = await paymentCollection.findOne({ transactionId: tranId });
+    if (paymentOrder && paymentOrder.cartItems) {
+      // Delete purchased items from cart
+      const query = {
+        _id: { $in: paymentOrder.cartItems.map((id) => new ObjectId(id)) },
+      };
+      await cartCollection.deleteMany(query);
+    }
+
+    // Redirect to frontend success page
+    res.redirect(`${process.env.VITE_CLIENT_URL}/dashboard/payment-history?status=success&txn=${tranId}`);
+  } catch (err) {
+    console.error("SSLCommerz success redirect error:", err);
+    res.redirect(`${process.env.VITE_CLIENT_URL}/dashboard/cart?status=failed`);
+  }
+};
+
+// Handle SSLCommerz Failure callback
+const handleSSLFail = async (req, res) => {
+  try {
+    const { tranId } = req.params;
+    await paymentCollection.deleteOne({ transactionId: tranId });
+    res.redirect(`${process.env.VITE_CLIENT_URL}/dashboard/cart?status=failed`);
+  } catch (err) {
+    console.error("SSLCommerz fail redirect error:", err);
+    res.redirect(`${process.env.VITE_CLIENT_URL}/dashboard/cart?status=failed`);
+  }
+};
+
+// Handle SSLCommerz Cancellation callback
+const handleSSLCancel = async (req, res) => {
+  try {
+    const { tranId } = req.params;
+    await paymentCollection.deleteOne({ transactionId: tranId });
+    res.redirect(`${process.env.VITE_CLIENT_URL}/dashboard/cart?status=cancelled`);
+  } catch (err) {
+    console.error("SSLCommerz cancel redirect error:", err);
+    res.redirect(`${process.env.VITE_CLIENT_URL}/dashboard/cart?status=cancelled`);
+  }
+};
+
 module.exports = {
   init,
   payment,
@@ -251,4 +390,8 @@ module.exports = {
   getAllPayments,
   updatePaymentStatus,
   deletePayment,
+  initiateSSLPayment,
+  handleSSLSuccess,
+  handleSSLFail,
+  handleSSLCancel,
 };
