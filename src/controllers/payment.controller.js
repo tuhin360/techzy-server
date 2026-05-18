@@ -1,14 +1,17 @@
 // controllers/payment.controller.js
 const { ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { sendPaymentReceiptEmail } = require("../services/email.service");
 
 let paymentCollection;
 let cartCollection;
+let productCollection;
 
 // Initialize collections
 const init = (db) => {
   paymentCollection = db.collection("payments");
   cartCollection = db.collection("carts");
+  productCollection = db.collection("products");
 };
 
 // Create Stripe PaymentIntent
@@ -73,6 +76,32 @@ const savePayment = async (req, res) => {
     };
 
     const deleteResult = await cartCollection.deleteMany(query);
+
+    // Fetch product details for the email receipt
+    let products = [];
+    if (menuItems && Array.isArray(menuItems) && menuItems.length > 0) {
+      try {
+        const productObjectIds = menuItems
+          .filter((id) => ObjectId.isValid(id))
+          .map((id) => new ObjectId(id));
+        if (productObjectIds.length > 0) {
+          products = await productCollection
+            .find({ _id: { $in: productObjectIds } })
+            .toArray();
+        }
+      } catch (err) {
+        console.error("Failed to fetch products for email:", err);
+      }
+    }
+
+    // Trigger receipt email asynchronously
+    sendPaymentReceiptEmail({
+      email,
+      transactionId,
+      amount: Number(amount),
+      date: new Date(date),
+      products,
+    }).catch((err) => console.error("Email sending background failed:", err));
 
     res.status(201).json({
       success: true,
@@ -341,14 +370,48 @@ const handleSSLSuccess = async (req, res) => {
       }
     );
 
-    // Find the payment to get the cart items
+    // Find the payment to get the details
     const paymentOrder = await paymentCollection.findOne({ transactionId: tranId });
-    if (paymentOrder && paymentOrder.cartItems) {
-      // Delete purchased items from cart
-      const query = {
-        _id: { $in: paymentOrder.cartItems.map((id) => new ObjectId(id)) },
-      };
-      await cartCollection.deleteMany(query);
+    if (paymentOrder) {
+      if (paymentOrder.cartItems) {
+        // Delete purchased items from cart
+        const query = {
+          _id: { $in: paymentOrder.cartItems.map((id) => new ObjectId(id)) },
+        };
+        await cartCollection.deleteMany(query);
+      }
+
+      // Fetch products for email receipt
+      let products = [];
+      if (
+        paymentOrder.menuItems &&
+        Array.isArray(paymentOrder.menuItems) &&
+        paymentOrder.menuItems.length > 0
+      ) {
+        try {
+          const productObjectIds = paymentOrder.menuItems
+            .filter((id) => ObjectId.isValid(id))
+            .map((id) => new ObjectId(id));
+          if (productObjectIds.length > 0) {
+            products = await productCollection
+              .find({ _id: { $in: productObjectIds } })
+              .toArray();
+          }
+        } catch (err) {
+          console.error("Failed to fetch products for SSL email:", err);
+        }
+      }
+
+      // Trigger receipt email asynchronously
+      sendPaymentReceiptEmail({
+        email: paymentOrder.email,
+        transactionId: tranId,
+        amount: Number(paymentOrder.amount),
+        date: paymentOrder.date || new Date(),
+        products,
+      }).catch((err) =>
+        console.error("SSL Email sending background failed:", err)
+      );
     }
 
     // Redirect to frontend success page
